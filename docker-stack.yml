@@ -1,0 +1,63 @@
+#To be used with docker stack
+#postgres will be the main db with a rest api and api helpers for updating the data
+
+version: "3.6"
+
+services:
+  postgres:
+    image: postgres:10.3-alpine
+    env_file:
+      - ./postgres.env
+
+    environment:
+        TZ: Europe/Stockholm
+
+    secrets:
+      - postgres_password
+
+    volumes:
+      - "dbdata:/var/lib/postgresql/data"
+
+    networks:
+      dbnet:
+        aliases:
+          - db
+
+  adminer:
+    image: adminer
+    ports:
+      - "8080:8080"
+
+    networks:
+      dbnet:
+
+  backup:
+    image: kruux/postgres-backup:10.3.00
+    env_file:
+      - ./postgres.env
+
+    environment:
+      POSTGRES_NAME: db
+      LOG_DIR: /backup/log
+      TZ: Europe/Stockholm
+
+    secrets:
+      - postgres_password
+
+    volumes:
+      - "dbbackup:/backup"
+
+    networks:
+      dbnet:
+
+
+networks:
+  dbnet:
+
+secrets:
+  postgres_password:
+    file: "./postgres_password.secret"
+
+volumes:
+  dbdata:
+  dbbackup:
